@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const routeUsers = require('./routes/users');
 const routeCards = require('./routes/cards');
 const errorHandler = require('./utils/errorHandler');
+const process = require('process');
+const NotFoundError = require('./utils/errors/notFoundError');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -20,6 +22,9 @@ app.use((req, res, next) => {
 });
 app.use('/users', routeUsers);
 app.use('/cards', routeCards);
+app.all('/*', (req, res, next) => {
+  next(new NotFoundError('Неправильно указан путь'));
+});
 app.use(errorHandler);
 
 app.listen(PORT);

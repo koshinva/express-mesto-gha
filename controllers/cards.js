@@ -12,8 +12,9 @@ module.exports.getCards = (req, res, next) => {
     .catch(next);
 };
 module.exports.addCard = (req, res, next) => {
+  const owner = req.user._id;
   const { name, link } = req.body;
-  Card.create({ name, link })
+  Card.create({ name, link, owner })
     .then((card) => res.status(STATUS_CODE_201).send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -31,16 +32,23 @@ module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findById(cardId)
     .then((card) => {
-      if (card) {
-        card.remove();
-        res
-          .status(STATUS_CODE_200)
-          .send({ message: 'Карточка успешно удалена' });
+      if (!card) {
+        throw new NotFoundError(`Карточка с указанным ${cardId} не найден`);
+      }
+      res.status(STATUS_CODE_200).send({ message: 'Карточка успешно удалена' });
+      return card.remove();
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(
+          new IncorrectDataError(
+            'Переданы некорректные данные для удаления карточки',
+          ),
+        );
         return;
       }
-      throw new NotFoundError(`Карточка с указанным ${cardId} не найден`);
-    })
-    .catch(next);
+      next(err);
+    });
 };
 module.exports.likeCard = (req, res, next) => {
   const { cardId } = req.params;
@@ -50,11 +58,10 @@ module.exports.likeCard = (req, res, next) => {
     { new: true },
   )
     .then((card) => {
-      if (card) {
-        res.status(STATUS_CODE_201).send({ data: card });
-        return;
+      if (!card) {
+        throw new NotFoundError(`Передан несуществующий ${cardId} карточки`);
       }
-      throw new NotFoundError(`Передан несуществующий ${cardId} карточки`);
+      res.status(STATUS_CODE_201).send({ data: card });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
