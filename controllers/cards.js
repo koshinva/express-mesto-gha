@@ -35,8 +35,11 @@ module.exports.deleteCard = (req, res, next) => {
       if (!card) {
         throw new NotFoundError(`Карточка с указанным ${cardId} не найден`);
       }
-      res.status(STATUS_CODE_200).send({ message: 'Карточка успешно удалена' });
-      return card.remove();
+      return card.remove().then(() => {
+        res
+          .status(STATUS_CODE_200)
+          .send({ message: 'Карточка успешно удалена' });
+      });
     })
     .catch((err) => {
       if (err.name === 'CastError') {

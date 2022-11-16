@@ -1,3 +1,6 @@
+require('dotenv').config();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const IncorrectDataError = require('../utils/errors/incorrectDataError');
 const NotFoundError = require('../utils/errors/notFoundError');
@@ -30,20 +33,35 @@ module.exports.getUserById = (req, res, next) => {
     });
 };
 module.exports.addUser = (req, res, next) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(STATUS_CODE_201).send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(
-          new IncorrectDataError(
-            'Переданы некорректные данные при создании пользователя',
-          ),
-        );
-        return;
-      }
-      next(err);
-    });
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+  User.checkEmail(email);
+  bcrypt.hash(password, 12).then((hash) => {
+    User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    })
+      .then((user) => res.status(STATUS_CODE_201).send({ data: user }))
+      .catch((err) => {
+        if (err.name === 'ValidationError') {
+          next(
+            new IncorrectDataError(
+              'Переданы некорректные данные при создании пользователя',
+            ),
+          );
+          return;
+        }
+        next(err);
+      });
+  });
 };
 module.exports.updateProfile = (req, res, next) => {
   const { name, about } = req.body;
@@ -106,4 +124,18 @@ module.exports.updateAvatar = (req, res, next) => {
       }
       next(err);
     });
+};
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, {
+        expiresIn: '7d',
+      });
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+      });
+    })
+    .catch(next);
 };
