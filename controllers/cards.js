@@ -6,7 +6,6 @@ const {
   STATUS_CODE_200,
   STATUS_CODE_201,
 } = require('../utils/errors/statusCode');
-const UnsanctionedError = require('../utils/errors/unsanctionedError');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})

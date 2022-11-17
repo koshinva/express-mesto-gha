@@ -33,7 +33,9 @@ module.exports.getUserById = (req, res, next) => {
     });
 };
 module.exports.addUser = (req, res, next) => {
-  const { name, about, avatar, email, password } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
   User.checkEmail(email);
   bcrypt.hash(password, 12).then((hash) => {
     User.create({
@@ -43,6 +45,7 @@ module.exports.addUser = (req, res, next) => {
       email,
       password: hash,
     })
+      .select('-password')
       .then((user) => res.status(STATUS_CODE_201).send({ data: user }))
       .catch((err) => {
         if (err.code === 11000) {
@@ -145,7 +148,7 @@ module.exports.login = (req, res, next) => {
           maxAge: 3600000 * 24 * 7,
           httpOnly: true,
         })
-        .end();
+        .send({ message: 'Успешная авторизация' });
     })
     .catch(next);
 };
