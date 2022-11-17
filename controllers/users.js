@@ -45,8 +45,17 @@ module.exports.addUser = (req, res, next) => {
       email,
       password: hash,
     })
-      .select('-password')
-      .then((user) => res.status(STATUS_CODE_201).send({ data: user }))
+      .then((user) => {
+        res.status(STATUS_CODE_201).send({
+          data: {
+            name: user.name,
+            about: user.about,
+            avatar: user.avatar,
+            email: user.email,
+            _id: user._id,
+          },
+        });
+      })
       .catch((err) => {
         if (err.code === 11000) {
           next(
