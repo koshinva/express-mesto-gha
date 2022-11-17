@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const IncorrectDataError = require('../utils/errors/incorrectDataError');
-const IncorrectEmailOrPasswordError = require('../utils/errors/incorrectEmailOrPasswordError');
+const UnsanctionedError = require('../utils/errors/unsanctionedError');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
+    select: false,
   },
 });
 
@@ -43,15 +44,13 @@ userSchema.statics.findUserByCredentials = function findUserByCredentials(
   email,
   password,
 ) {
-  return this.findOne({ email }).then((user) => {
+  return this.findOne({ email }).select('+password').then((user) => {
     if (!user) {
-      throw new IncorrectEmailOrPasswordError('Неправильные почта или пароль');
+      throw new UnsanctionedError('Неправильные почта или пароль');
     }
-    bcrypt.compare(password, user.password).then((matched) => {
+    return bcrypt.compare(password, user.password).then((matched) => {
       if (!matched) {
-        throw new IncorrectEmailOrPasswordError(
-          'Неправильные почта или пароль',
-        );
+        throw new UnsanctionedError('Неправильные почта или пароль');
       }
       return user;
     });

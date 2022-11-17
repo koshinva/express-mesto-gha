@@ -5,6 +5,7 @@ const {
   STATUS_CODE_200,
   STATUS_CODE_201,
 } = require('../utils/errors/statusCode');
+const UnsanctionedError = require('../utils/errors/unsanctionedError');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -34,6 +35,11 @@ module.exports.deleteCard = (req, res, next) => {
     .then((card) => {
       if (!card) {
         throw new NotFoundError(`Карточка с указанным ${cardId} не найден`);
+      }
+      if (req.user._id !== card.owner.toString()) {
+        throw new UnsanctionedError(
+          'Нет прав удалять карточку другого пользователя',
+        );
       }
       return card.remove().then(() => {
         res

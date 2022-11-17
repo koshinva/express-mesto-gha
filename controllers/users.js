@@ -1,9 +1,9 @@
-require('dotenv').config();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const IncorrectDataError = require('../utils/errors/incorrectDataError');
 const NotFoundError = require('../utils/errors/notFoundError');
+const RequestConflictError = require('../utils/errors/requestConflictError');
 const {
   STATUS_CODE_200,
   STATUS_CODE_201,
@@ -33,13 +33,7 @@ module.exports.getUserById = (req, res, next) => {
     });
 };
 module.exports.addUser = (req, res, next) => {
-  const {
-    name,
-    about,
-    avatar,
-    email,
-    password,
-  } = req.body;
+  const { name, about, avatar, email, password } = req.body;
   User.checkEmail(email);
   bcrypt.hash(password, 12).then((hash) => {
     User.create({
@@ -55,6 +49,14 @@ module.exports.addUser = (req, res, next) => {
           next(
             new IncorrectDataError(
               'Переданы некорректные данные при создании пользователя',
+            ),
+          );
+          return;
+        }
+        if (err.code === '11000') {
+          next(
+            new RequestConflictError(
+              'Пользователь с указанным email уже зарегистрирован',
             ),
           );
           return;
@@ -129,13 +131,27 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, {
-        expiresIn: '7d',
-      });
-      res.cookie('jwt', token, {
-        maxAge: 3600000 * 24 * 7,
-        httpOnly: true,
-      });
+      const token = jwt.sign(
+        { _id: user._id },
+        '96a5281308389ea0b68de98da03e3c35',
+        {
+          expiresIn: '7d',
+        },
+      );
+      res
+        .cookie('jwt', token, {
+          maxAge: 3600000 * 24 * 7,
+          httpOnly: true,
+        })
+        .end();
+    })
+    .catch(next);
+};
+module.exports.getInfoAboutCurrentUser = (req, res, next) => {
+  const { _id } = req.user;
+  User.findById(_id)
+    .then((user) => {
+      res.send({ data: user });
     })
     .catch(next);
 };
