@@ -45,18 +45,18 @@ module.exports.addUser = (req, res, next) => {
     })
       .then((user) => res.status(STATUS_CODE_201).send({ data: user }))
       .catch((err) => {
-        if (err.name === 'ValidationError') {
+        if (err.code === 11000) {
           next(
-            new IncorrectDataError(
-              'Переданы некорректные данные при создании пользователя',
+            new RequestConflictError(
+              'Пользователь с указанным email уже зарегистрирован',
             ),
           );
           return;
         }
-        if (err.code === '11000') {
+        if (err.name === 'ValidationError') {
           next(
-            new RequestConflictError(
-              'Пользователь с указанным email уже зарегистрирован',
+            new IncorrectDataError(
+              'Переданы некорректные данные при создании пользователя',
             ),
           );
           return;
@@ -98,6 +98,8 @@ module.exports.updateProfile = (req, res, next) => {
 };
 module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
+
+  User.checkUrlAvatar(avatar);
   User.findByIdAndUpdate(
     req.user._id,
     { avatar },

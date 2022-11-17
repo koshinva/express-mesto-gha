@@ -1,6 +1,7 @@
 const Card = require('../models/card');
 const IncorrectDataError = require('../utils/errors/incorrectDataError');
 const NotFoundError = require('../utils/errors/notFoundError');
+const AccessRestrictionError = require('../utils/errors/accessRestrictionError');
 const {
   STATUS_CODE_200,
   STATUS_CODE_201,
@@ -15,6 +16,7 @@ module.exports.getCards = (req, res, next) => {
 module.exports.addCard = (req, res, next) => {
   const owner = req.user._id;
   const { name, link } = req.body;
+  Card.checkUrlLink(link);
   Card.create({ name, link, owner })
     .then((card) => res.status(STATUS_CODE_201).send({ data: card }))
     .catch((err) => {
@@ -37,7 +39,7 @@ module.exports.deleteCard = (req, res, next) => {
         throw new NotFoundError(`Карточка с указанным ${cardId} не найден`);
       }
       if (req.user._id !== card.owner.toString()) {
-        throw new UnsanctionedError(
+        throw new AccessRestrictionError(
           'Нет прав удалять карточку другого пользователя',
         );
       }

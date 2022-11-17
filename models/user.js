@@ -40,21 +40,31 @@ userSchema.statics.checkEmail = function checkEmail(email) {
     throw new IncorrectDataError('Некорректный email');
   }
 };
+userSchema.statics.checkUrlAvatar = function checkUrlAvatar(avatar) {
+  const regex = /^https*:\/{2}(www\.)?[\w\W]{2,}#?$/;
+  if (!regex.test(avatar)) {
+    throw new IncorrectDataError(
+      `${avatar} некорректная ссылка для аватара профиля`,
+    );
+  }
+};
 userSchema.statics.findUserByCredentials = function findUserByCredentials(
   email,
   password,
 ) {
-  return this.findOne({ email }).select('+password').then((user) => {
-    if (!user) {
-      throw new UnsanctionedError('Неправильные почта или пароль');
-    }
-    return bcrypt.compare(password, user.password).then((matched) => {
-      if (!matched) {
+  return this.findOne({ email })
+    .select('+password')
+    .then((user) => {
+      if (!user) {
         throw new UnsanctionedError('Неправильные почта или пароль');
       }
-      return user;
+      return bcrypt.compare(password, user.password).then((matched) => {
+        if (!matched) {
+          throw new UnsanctionedError('Неправильные почта или пароль');
+        }
+        return user;
+      });
     });
-  });
 };
 
 module.exports = mongoose.model('user', userSchema);
