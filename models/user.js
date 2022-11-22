@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
-const IncorrectDataError = require('../utils/errors/incorrectDataError');
 const UnsanctionedError = require('../utils/errors/unsanctionedError');
 
 const userSchema = new mongoose.Schema({
@@ -19,6 +18,10 @@ const userSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
+    validate: {
+      validator: (v) => validator.isURL(v),
+      message: 'Некорректный URL',
+    },
     default:
       'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
   },
@@ -26,6 +29,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
+    validate: {
+      validator: (v) => validator.isEmail(v),
+      message: 'Некорректный email',
+    },
   },
   password: {
     type: String,
@@ -35,19 +42,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.statics.checkEmail = function checkEmail(email) {
-  if (!validator.isEmail(email)) {
-    throw new IncorrectDataError('Некорректный email');
-  }
-};
-userSchema.statics.checkUrlAvatar = function checkUrlAvatar(avatar) {
-  const regex = /^https*:\/{2}(www\.)?[\w\W]{2,}#?$/;
-  if (!regex.test(avatar)) {
-    throw new IncorrectDataError(
-      `${avatar} некорректная ссылка для аватара профиля`,
-    );
-  }
-};
 userSchema.statics.findUserByCredentials = function findUserByCredentials(
   email,
   password,

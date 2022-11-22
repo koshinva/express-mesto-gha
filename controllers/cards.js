@@ -3,19 +3,17 @@ const IncorrectDataError = require('../utils/errors/incorrectDataError');
 const NotFoundError = require('../utils/errors/notFoundError');
 const AccessRestrictionError = require('../utils/errors/accessRestrictionError');
 const {
-  STATUS_CODE_200,
   STATUS_CODE_201,
 } = require('../utils/errors/statusCode');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
-    .then((cards) => res.status(STATUS_CODE_200).send({ data: cards }))
+    .then((cards) => res.send({ data: cards }))
     .catch(next);
 };
 module.exports.addCard = (req, res, next) => {
   const owner = req.user._id;
   const { name, link } = req.body;
-  Card.checkUrlLink(link);
   Card.create({ name, link, owner })
     .then((card) => res.status(STATUS_CODE_201).send({ data: card }))
     .catch((err) => {
@@ -43,9 +41,7 @@ module.exports.deleteCard = (req, res, next) => {
         );
       }
       return card.remove().then(() => {
-        res
-          .status(STATUS_CODE_200)
-          .send({ message: 'Карточка успешно удалена' });
+        res.send({ message: 'Карточка успешно удалена' });
       });
     })
     .catch((err) => {
@@ -95,7 +91,7 @@ module.exports.dislikeCard = (req, res, next) => {
   )
     .then((card) => {
       if (card) {
-        res.status(STATUS_CODE_200).send({ data: card });
+        res.send({ data: card });
         return;
       }
       throw new NotFoundError(`Передан несуществующий ${cardId} карточки`);

@@ -22,7 +22,7 @@ router.post(
       name: Joi.string().min(2).max(30).required(),
       link: Joi.string()
         .required()
-        .pattern(/^https*:\/{2}(www\.)?[\w\W]{2,}#?$/),
+        .pattern(/^https*:\/{2}(www\.)?[\w\W]{2,}\.{1}[\w\W]+#?$/),
     }),
   }),
   addCard,

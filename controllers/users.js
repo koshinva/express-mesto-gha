@@ -5,7 +5,6 @@ const IncorrectDataError = require('../utils/errors/incorrectDataError');
 const NotFoundError = require('../utils/errors/notFoundError');
 const RequestConflictError = require('../utils/errors/requestConflictError');
 const {
-  STATUS_CODE_200,
   STATUS_CODE_201,
 } = require('../utils/errors/statusCode');
 
@@ -19,7 +18,7 @@ module.exports.getUserById = (req, res, next) => {
   User.findById(userId)
     .then((user) => {
       if (user) {
-        res.status(STATUS_CODE_200).send({ data: user });
+        res.send({ data: user });
       } else {
         throw new NotFoundError(`Пользователь с указанным ${userId} не найден`);
       }
@@ -36,7 +35,7 @@ module.exports.addUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  User.checkEmail(email);
+  // User.checkEmail(email);
   bcrypt.hash(password, 12).then((hash) => {
     User.create({
       name,
@@ -75,7 +74,7 @@ module.exports.addUser = (req, res, next) => {
         }
         next(err);
       });
-  });
+  }).catch(next);
 };
 module.exports.updateProfile = (req, res, next) => {
   const { name, about } = req.body;
@@ -86,7 +85,7 @@ module.exports.updateProfile = (req, res, next) => {
   )
     .then((user) => {
       if (user) {
-        res.status(STATUS_CODE_200).send({ data: user });
+        res.send({ data: user });
       }
       throw new NotFoundError(
         `Пользователь с указанным ${req.user._id} не найден`,
@@ -111,7 +110,7 @@ module.exports.updateProfile = (req, res, next) => {
 module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
-  User.checkUrlAvatar(avatar);
+  // User.checkUrlAvatar(avatar);
   User.findByIdAndUpdate(
     req.user._id,
     { avatar },
@@ -119,7 +118,7 @@ module.exports.updateAvatar = (req, res, next) => {
   )
     .then((user) => {
       if (user) {
-        res.status(STATUS_CODE_200).send({ data: user });
+        res.send({ data: user });
       }
       throw new NotFoundError(
         `Пользователь с указанным ${req.user._id} не найден`,
